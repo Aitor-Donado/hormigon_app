@@ -1,0 +1,9 @@
+<nav class="navbar">
+    <a href="/">Inicio</a>
+    {% if usuario %}
+        <a href="/logout">Cerrar sesión</a>
+    {% else %}
+        <a href="/login">Iniciar sesión</a>
+        <a href="/register">Registrarse</a>
+    {% endif %}
+</nav> 

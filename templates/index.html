@@ -7,7 +7,17 @@
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
+    {% include '_navbar.html' %}
     <h1>Predicción de Dureza del Hormigón</h1>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
     {% if usuario %}
         <p>Bienvenido, {{ usuario }}!</p>
         <!-- Aquí podrías agregar un enlace para cerrar sesión si lo deseas -->

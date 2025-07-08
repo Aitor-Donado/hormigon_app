@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, make_response #, jsonify
+from flask import Flask, render_template, request, make_response, redirect, url_for, flash #, jsonify
 import pickle
 import pandas as pd
 #import numpy as np
@@ -80,8 +80,9 @@ def login():
             conn.close()
             if row and row[0] and nombre and check_password_hash(str(row[0]), contrasena):
                 token = crear_jwt(nombre, roles)
-                resp = make_response(render_template('index.html', mensaje='Ingreso exitoso', form=form, view='login'))
+                resp = make_response(redirect(url_for('index')))
                 resp.set_cookie('jwt', token, httponly=True)
+                flash('Ingreso exitoso')
                 return resp
             else:
                 mensaje = 'Usuario o contraseña incorrectos.'
@@ -149,11 +150,24 @@ def register():
                       (nombre, apellido, contrasena_hash))
             conn.commit()
             conn.close()
-            mensaje = 'Usuario registrado exitosamente.'
+            # Login automático tras registro
+            roles = ['usuario']
+            token = crear_jwt(nombre, roles)
+            resp = make_response(redirect(url_for('index')))
+            resp.set_cookie('jwt', token, httponly=True)
+            flash('Usuario registrado exitosamente')
+            return resp
         except Exception as e:
             mensaje = f'Error al registrar usuario: {str(e)}'
         return render_template('index.html', mensaje=mensaje, form=form, view='register')
     return render_template('index.html', mensaje=mensaje, form=form, view='register')
+
+@app.route('/logout')
+def logout():
+    resp = make_response(redirect(url_for('index')))
+    resp.set_cookie('jwt', '', expires=0)
+    flash('Sesión cerrada correctamente')
+    return resp
 
 if __name__ == '__main__':
     app.run(debug=True)
