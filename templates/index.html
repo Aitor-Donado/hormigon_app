@@ -77,6 +77,13 @@
 <body>
     <h1>Predicción de Dureza del Hormigón</h1>
     
+    {% if usuario %}
+        <p>Bienvenido, {{ usuario }}!</p>
+        <!-- Aquí podrías agregar un enlace para cerrar sesión si lo deseas -->
+    {% else %}
+        <a href="/login">Iniciar sesión</a> | <a href="/register">Registrarse</a>
+    {% endif %}
+
     <div class="form-container">
         <form action="/" method="post">
             <div class="form-group">
