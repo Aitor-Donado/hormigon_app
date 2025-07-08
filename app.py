@@ -80,14 +80,14 @@ def login():
             conn.close()
             if row and row[0] and nombre and check_password_hash(str(row[0]), contrasena):
                 token = crear_jwt(nombre, roles)
-                resp = make_response(render_template('login.html', mensaje='Ingreso exitoso', form=form))
+                resp = make_response(render_template('index.html', mensaje='Ingreso exitoso', form=form, view='login'))
                 resp.set_cookie('jwt', token, httponly=True)
                 return resp
             else:
                 mensaje = 'Usuario o contraseña incorrectos.'
         except Exception as e:
             mensaje = f'Error al ingresar: {str(e)}'
-    return render_template('login.html', mensaje=mensaje, form=form)
+    return render_template('index.html', mensaje=mensaje, form=form, view='login')
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -99,9 +99,11 @@ def index():
         if payload:
             usuario = payload.get('nombre')
             roles = payload.get('roles', [])
+    mensaje = None
+    prediction_text = None
+    show_result = False
     if request.method == 'POST':
         try:
-            # Obtener datos del formulario
             cement = float(request.form['cement'])
             slag = float(request.form['slag'])
             ash = float(request.form['ash'])
@@ -110,8 +112,6 @@ def index():
             coarseagg = float(request.form['coarseagg'])
             fineagg = float(request.form['fineagg'])
             age = float(request.form['age'])
-            
-            # Crear DataFrame con los datos de entrada
             input_data = pd.DataFrame({
                 'cement': [cement],
                 'slag': [slag],
@@ -122,31 +122,15 @@ def index():
                 'fineagg': [fineagg],
                 'age': [age]
             })
-            
-            # Escalar los datos
             scaled_data = scaler.transform(input_data)
-            
-            # Hacer la predicción
             prediction = model.predict(scaled_data)
-            
-            # Redondear a 2 decimales
             prediction_rounded = round(prediction[0], 2)
-            
-            return render_template('index.html', 
-                                prediction_text=f'La dureza estimada del hormigón es: {prediction_rounded} MPa',
-                                show_result=True,
-                                usuario=usuario,
-                                roles=roles)
-            
+            prediction_text = f'La dureza estimada del hormigón es: {prediction_rounded} MPa'
+            show_result = True
         except Exception as e:
-            return render_template('index.html', 
-                                prediction_text=f'Error: {str(e)}',
-                                show_result=True,
-                                usuario=usuario,
-                                roles=roles)
-    
-    # Si es GET, mostrar el formulario vacío
-    return render_template('index.html', show_result=False, usuario=usuario, roles=roles)
+            prediction_text = f'Error: {str(e)}'
+            show_result = True
+    return render_template('index.html', view='predict', usuario=usuario, roles=roles, show_result=show_result, prediction_text=prediction_text)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -168,8 +152,8 @@ def register():
             mensaje = 'Usuario registrado exitosamente.'
         except Exception as e:
             mensaje = f'Error al registrar usuario: {str(e)}'
-        return render_template('register.html', mensaje=mensaje, form=form)
-    return render_template('register.html', mensaje=mensaje, form=form)
+        return render_template('index.html', mensaje=mensaje, form=form, view='register')
+    return render_template('index.html', mensaje=mensaje, form=form, view='register')
 
 if __name__ == '__main__':
     app.run(debug=True)

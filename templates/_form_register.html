@@ -1,0 +1,16 @@
+<div class="form-container">
+    <h2>Registro de Usuario</h2>
+    {% if mensaje %}
+        <p>{{ mensaje }}</p>
+    {% endif %}
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <label for="nombre">Nombre:</label><br>
+        {{ form.nombre(size=32) }}<br><br>
+        <label for="apellido">Apellido:</label><br>
+        {{ form.apellido(size=32) }}<br><br>
+        <label for="contrasena">Contraseña:</label><br>
+        {{ form.contrasena(size=32) }}<br><br>
+        {{ form.submit() }}
+    </form>
+</div> 

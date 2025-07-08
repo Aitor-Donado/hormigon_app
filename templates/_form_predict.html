@@ -1,0 +1,37 @@
+<div class="form-container">
+    <form action="/" method="post">
+        <div class="form-group">
+            <label for="cement">Cemento (kg/m³): <span class="range-value" id="cementValue">320</span></label>
+            <input type="range" id="cement" name="cement" min="100" max="540" value="320" step="1" required>
+        </div>
+        <div class="form-group">
+            <label for="slag">Escoria (kg/m³):</label>
+            <input type="number" step="0.1" id="slag" name="slag" min="0" value="0">
+        </div>
+        <div class="form-group">
+            <label for="ash">Cenizas (kg/m³):</label>
+            <input type="number" step="0.1" id="ash" name="ash" min="0" value="0">
+        </div>
+        <div class="form-group">
+            <label for="water">Agua (kg/m³):</label>
+            <input type="number" step="0.1" id="water" name="water" min="0" required>
+        </div>
+        <div class="form-group">
+            <label for="superplastic">Superplastificante (kg/m³):</label>
+            <input type="number" step="0.1" id="superplastic" name="superplastic" min="0" value="0">
+        </div>
+        <div class="form-group">
+            <label for="coarseagg">Árido grueso (kg/m³):</label>
+            <input type="number" step="0.1" id="coarseagg" name="coarseagg" min="0" required>
+        </div>
+        <div class="form-group">
+            <label for="fineagg">Árido fino (kg/m³):</label>
+            <input type="number" step="0.1" id="fineagg" name="fineagg" min="0" required>
+        </div>
+        <div class="form-group">
+            <label for="age">Edad (días):</label>
+            <input type="number" step="1" id="age" name="age" min="1" max="365" required>
+        </div>
+        <button type="submit">Predecir Dureza</button>
+    </form>
+</div> 
