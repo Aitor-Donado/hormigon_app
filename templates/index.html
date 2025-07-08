@@ -19,10 +19,9 @@
       {% endif %}
     {% endwith %}
     {% if usuario %}
-        <p>Bienvenido, {{ usuario }}!</p>
-        <!-- Aquí podrías agregar un enlace para cerrar sesión si lo deseas -->
+        <p>Hola, {{ usuario }}!</p>
     {% else %}
-        <a href="/login">Iniciar sesión</a> | <a href="/register">Registrarse</a>
+        <p>Hola desconocido</p>
     {% endif %}
 
     {% if view == 'predict' %}

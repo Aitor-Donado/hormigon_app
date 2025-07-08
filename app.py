@@ -36,11 +36,12 @@ def init_db():
 init_db()
 
 def crear_jwt(nombre, roles):
+    now = datetime.utcnow()
     payload = {
         'nombre': nombre,
         'roles': roles,
-        'exp': datetime.now() + timedelta(hours=1),
-        'iat': datetime.now()
+        'exp': int((now + timedelta(hours=3)).timestamp()),
+        'iat': int(now.timestamp())
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return token
@@ -49,8 +50,13 @@ def decodificar_jwt(token):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         return payload
-    except Exception:
-        return None
+    except jwt.ExpiredSignatureError:
+        print("❌ Token expirado")
+    except jwt.InvalidTokenError as e:
+        print(f"❌ Token inválido: {e}")
+    except Exception as e:
+        print(f"❌ Error desconocido al decodificar el token: {e}")
+    return None
 
 class RegistroForm(FlaskForm):
     nombre = StringField('Nombre', validators=[DataRequired(), Length(max=100)])
@@ -75,10 +81,10 @@ def login():
             c = conn.cursor()
             c.execute('SELECT contrasena FROM usuarios WHERE nombre = ?', (nombre,))
             row = c.fetchone()
-            # Obtener roles (en este ejemplo, solo 'usuario')
-            roles = ['usuario']
             conn.close()
-            if row and row[0] and nombre and check_password_hash(str(row[0]), contrasena):
+
+            if row and check_password_hash(row[0], contrasena):
+                roles = ['usuario']  # Asignar roles solo si el login es exitoso
                 token = crear_jwt(nombre, roles)
                 resp = make_response(redirect(url_for('index')))
                 resp.set_cookie('jwt', token, httponly=True)
@@ -97,8 +103,10 @@ def index():
     token = request.cookies.get('jwt')
     if token:
         payload = decodificar_jwt(token)
+        print(f"Payload decodificado: {payload}")
         if payload:
             usuario = payload.get('nombre')
+            print(f"Usuario autenticado: {usuario}")
             roles = payload.get('roles', [])
     mensaje = None
     prediction_text = None
