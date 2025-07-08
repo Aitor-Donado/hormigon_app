@@ -1,5 +1,18 @@
 # Aplicación Web para Predecir Dureza del Hormigón
 
+## Funcionalidades técnicas añadidas
+
+- **Registro de usuarios:** Permite crear usuarios con nombre, apellido y contraseña mediante un formulario protegido por CSRF.
+- **Almacenamiento seguro de contraseñas:** Las contraseñas se almacenan de forma segura usando hash (bcrypt/werkzeug).
+- **Inicio de sesión (login):** Los usuarios pueden autenticarse mediante un formulario de login. Si el login es exitoso, se genera un JWT con el nombre y los roles del usuario.
+- **Gestión de sesión con JWT:** El estado de la sesión se guarda en una cookie segura que contiene un JWT firmado. En cada request, la aplicación valida el JWT para identificar al usuario y sus roles.
+- **Protección CSRF:** Todos los formularios usan tokens CSRF para evitar ataques de tipo Cross-Site Request Forgery.
+- **Cookies seguras:** El nombre de usuario y el JWT se almacenan en cookies con la opción `httponly` para mayor seguridad.
+- **Roles de usuario:** El JWT incluye los roles del usuario, permitiendo una futura gestión de permisos y acceso a funcionalidades según el rol.
+- **Mensajes personalizados:** Si el usuario está autenticado, se muestra un mensaje de bienvenida en la página principal.
+
+---
+
 Voy a crear una aplicación web sencilla con Flask para el backend y un formulario HTML básico para el frontend que permita predecir la dureza del hormigón usando un modelo entrenado con el algoritmo XGBoost.
 
 ## Estructura del proyecto
