@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hormigon_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - hormigon_net
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+    command: python3 app.py
+    volumes:
+      - .:/app
+    ports:
+      - "5000:5000"
+    environment:
+      - SECRET_KEY=cambia_esto_por_una_clave_secreta_segura
+      - JWT_SECRET=cambia_esto_por_una_clave_jwt_segura
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=hormigon_db
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+    depends_on:
+      - db
+    networks:
+      - hormigon_net
+
+volumes:
+  pgdata:
+
+networks:
+  hormigon_net:
+    driver: bridge 

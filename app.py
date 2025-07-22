@@ -1,39 +1,49 @@
-from flask import Flask, render_template, request, make_response, redirect, url_for, flash #, jsonify
+import os
+from flask import Flask, render_template, request, make_response, redirect, url_for, flash
 import pickle
 import pandas as pd
-#import numpy as np
-import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Length
 import jwt
 from datetime import datetime, timedelta
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import IntegrityError
+
+# Cargar variables de entorno
+from dotenv import load_dotenv
+load_dotenv()
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'cambia_esto_por_una_clave_secreta_segura'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'cambia_esto_por_una_clave_secreta_segura')
+
+# Configuración de SQLAlchemy para PostgreSQL
+POSTGRES_USER = os.environ.get('POSTGRES_USER', 'postgres')
+POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD', 'postgres')
+POSTGRES_DB = os.environ.get('POSTGRES_DB', 'hormigon_db')
+POSTGRES_HOST = os.environ.get('POSTGRES_HOST', 'db')
+POSTGRES_PORT = os.environ.get('POSTGRES_PORT', '5432')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+# Modelo de usuario
+class Usuario(db.Model):
+    __tablename__ = 'usuarios'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), unique=True, nullable=False)
+    apellido = db.Column(db.String(100), nullable=False)
+    contrasena = db.Column(db.String(200), nullable=False)
 
 # Cargar el modelo y el scaler al iniciar la aplicación
 model = pickle.load(open('static/final_model.pkl', 'rb'))
 scaler = pickle.load(open('static/scaler.pkl', 'rb'))
 
-JWT_SECRET = 'cambia_esto_por_una_clave_jwt_segura'
+JWT_SECRET = os.environ.get('JWT_SECRET', 'cambia_esto_por_una_clave_jwt_segura')
 JWT_ALGORITHM = 'HS256'
-
-# Inicializar la base de datos y crear la tabla de usuarios si no existe
-def init_db():
-    conn = sqlite3.connect('usuarios.db')
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS usuarios (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    nombre TEXT NOT NULL,
-                    apellido TEXT NOT NULL,
-                    contrasena TEXT NOT NULL
-                )''')
-    conn.commit()
-    conn.close()
-
-init_db()
 
 def crear_jwt(nombre, roles):
     now = datetime.utcnow()
@@ -69,6 +79,7 @@ class LoginForm(FlaskForm):
     contrasena = PasswordField('Contraseña', validators=[DataRequired()])
     submit = SubmitField('Ingresar')
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     mensaje = None
@@ -77,14 +88,9 @@ def login():
         nombre = form.nombre.data
         contrasena = form.contrasena.data or ''
         try:
-            conn = sqlite3.connect('usuarios.db')
-            c = conn.cursor()
-            c.execute('SELECT contrasena FROM usuarios WHERE nombre = ?', (nombre,))
-            row = c.fetchone()
-            conn.close()
-
-            if row and check_password_hash(row[0], contrasena):
-                roles = ['usuario']  # Asignar roles solo si el login es exitoso
+            usuario = Usuario.query.filter_by(nombre=nombre).first()
+            if usuario and check_password_hash(usuario.contrasena, contrasena):
+                roles = ['usuario']
                 token = crear_jwt(nombre, roles)
                 resp = make_response(redirect(url_for('index')))
                 resp.set_cookie('jwt', token, httponly=True)
@@ -150,22 +156,21 @@ def register():
         apellido = form.apellido.data
         contrasena = form.contrasena.data or ''
         try:
-            # Hashear la contraseña antes de guardarla
             contrasena_hash = generate_password_hash(contrasena)
-            conn = sqlite3.connect('usuarios.db')
-            c = conn.cursor()
-            c.execute('INSERT INTO usuarios (nombre, apellido, contrasena) VALUES (?, ?, ?)',
-                      (nombre, apellido, contrasena_hash))
-            conn.commit()
-            conn.close()
-            # Login automático tras registro
+            nuevo_usuario = Usuario(nombre=nombre, apellido=apellido, contrasena=contrasena_hash)
+            db.session.add(nuevo_usuario)
+            db.session.commit()
             roles = ['usuario']
             token = crear_jwt(nombre, roles)
             resp = make_response(redirect(url_for('index')))
             resp.set_cookie('jwt', token, httponly=True)
             flash('Usuario registrado exitosamente')
             return resp
+        except IntegrityError:
+            db.session.rollback()
+            mensaje = 'El nombre de usuario ya existe.'
         except Exception as e:
+            db.session.rollback()
             mensaje = f'Error al registrar usuario: {str(e)}'
         return render_template('index.html', mensaje=mensaje, form=form, view='register')
     return render_template('index.html', mensaje=mensaje, form=form, view='register')
@@ -178,5 +183,6 @@ def logout():
     return resp
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000) 
-    # app.run(debug=True)
+    with app.app_context():
+        db.create_all()
+    app.run(host='0.0.0.0', port=5000)
